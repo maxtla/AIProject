@@ -11,6 +11,7 @@ Max jobbar ojämna datum.
 Jacob jobbar jämna datum.
 
 Efter en arbetsdag COMMIT den nyare versionen av projektet i en egen BRANCH och väntar på att alla deltagare har kollat
-igenom den nya versionen av projektet och gett godkännande för MERGE med MASTER. 
+igenom den nya versionen av projektet och gett godkännande för MERGE med MASTER.
+Ladda också upp en arbetslogg om arbetsdagen, vad som gjordes osv. Namnge loggfiler såhär: Arbetslogg - Datum
 
 GGHF! :)
