@@ -31,7 +31,7 @@ class WorkerAI
 private:
 	Unit workerPtr;
 	int currentState;
-	stack<int> stateStack;
+	int previousState; 
 	bool activeEvent;
 	int currentEvent;
 	bool isBuilding;
@@ -41,8 +41,9 @@ private:
 	void build();
 	void _buildDepot();
 	void _buildRefinery();
+	void _buildBarracks();
 public:
-	bool buildingDone;
+	int getPreviousState() const;
 	void setState(int state); //exists for initial purposes
 	void setEvent(int event); //this event must be a build event
 	void update(); //this is where state machine logic is called

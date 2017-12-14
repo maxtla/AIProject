@@ -77,9 +77,12 @@ public:
 private:
 	vector<WorkerAI> workerAIContainer;
 	queue<int> GameStates;
-
+	int marineCounter;
 	//private methods
-	void buildDepot();
+	void buildDepot(size_t unit);
 	void createWorker();
-	void buildRefinery();
+	void createMarine();
+	void buildRefinery(size_t unit);
+	void buildBarracks(size_t unit);
+	void update();
 };
