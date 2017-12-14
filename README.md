@@ -7,8 +7,8 @@ https://docs.google.com/document/d/1qrSajEEGCMuuZsrI3iCq1vuclV6uSMXh72FHPQ6iKZ8/
 Kryssa endast i när en uppgift är komplett och felfri. 
 
 Arbetsuppdelning: 
-Max jobbar ojämna datum.
-Jacob jobbar jämna datum.
+Max jobbar jämna datum.
+Jacob jobbar ojämna datum.
 
 Efter en arbetsdag COMMIT den nyare versionen av projektet i en egen BRANCH och väntar på att alla deltagare har kollat
 igenom den nya versionen av projektet och gett godkännande för MERGE med MASTER.
