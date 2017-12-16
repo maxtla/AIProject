@@ -44,6 +44,8 @@ void WorkerAI::build()
 {
 	isBuilding = true;
 	
+	
+	
 	switch (this->currentEvent)
 	{
 	case BuildEvents::buildSupplyDepot:
@@ -68,28 +70,11 @@ void WorkerAI::_buildDepot()
 		if (u->getType() == UnitTypes::Terran_Command_Center)
 		{
 			TilePosition t_pos = u->getTilePosition();
-			//check where we can build around it
 			UnitType type = UnitTypes::Terran_Supply_Depot;
-			int offset = 2;
-			const int up = 0;
-			const int down = 1;
-			const int left = 2;
-			const int right = 3;
-			int value = 0;
-			while (!Broodwar->canBuildHere(t_pos, type))
-			{
-				//use a walker approach to find a random suitable position
-				//this isn't smart AI just lazy programming
-				value = rand() % 4;
-				if (value == up)
-					t_pos.y -= offset;
-				if (value == down)
-					t_pos.y += offset;
-				if (value == left)
-					t_pos.x -= offset;
-				if (value == right)
-					t_pos.x += offset;
-			}
+			
+			//check where we can build around it
+			t_pos = this->findBuildLocation(type, t_pos);
+			
 			this->workerPtr->build(type, t_pos);
 			break;
 		}
@@ -99,7 +84,7 @@ void WorkerAI::_buildDepot()
 void WorkerAI::_buildRefinery()
 {
 	//find nearest gas geysers
-	Unit nearestGas= nullptr;
+	Unit nearestGas = nullptr;
 	for (auto u : Broodwar->getGeysers())
 	{
 		if (nearestGas == nullptr || this->workerPtr->getDistance(u) < this->workerPtr->getDistance(nearestGas))
@@ -120,32 +105,64 @@ void WorkerAI::_buildBarracks()
 		if (u->getType() == UnitTypes::Terran_Command_Center)
 		{
 			TilePosition t_pos = u->getTilePosition();
-			//check where we can build around it
 			UnitType type = UnitTypes::Terran_Barracks;
-			int offset = 3;
-			const int up = 0;
-			const int down = 1;
-			const int left = 2;
-			const int right = 3;
-			int value = 0;
-			while (!Broodwar->canBuildHere(t_pos, type))
-			{
-				//use a walker approach to find a random suitable position
-				//this isn't smart AI just lazy programming
-				value = rand() % 4;
-				if (value == up)
-					t_pos.y -= offset;
-				if (value == down)
-					t_pos.y += offset;
-				if (value == left)
-					t_pos.x -= offset;
-				if (value == right)
-					t_pos.x += offset;
-			}
+
+			//check where we can build around it
+			t_pos = this->findBuildLocation(type, t_pos);
+
 			this->workerPtr->build(type, t_pos);
 			break;
 		}
 	}
+}
+
+TilePosition WorkerAI::findBuildLocation(UnitType type, TilePosition t_pos)
+{
+	//I also added to the algorithm to check if there are any mobile units standing in the location where
+	//structure could be built, since this online tutorial had it for their structure location finder http://www.sscaitournament.com/index.php?action=tutorial
+
+	bool foundLocation = false;
+
+	int offset = 3;
+	const int up = 0;
+	const int down = 1;
+	const int left = 2;
+	const int right = 3;
+	int value = 0;
+
+	while (!foundLocation)
+	{
+		while (!Broodwar->canBuildHere(t_pos, type))
+		{
+			//use a walker approach to find a random suitable position
+			//this isn't smart AI just lazy programming
+			value = rand() % 4;
+			if (value == up)
+				t_pos.y -= offset;
+			if (value == down)
+				t_pos.y += offset;
+			if (value == left)
+				t_pos.x -= offset;
+			if (value == right)
+				t_pos.x += offset;
+		}
+
+		//See that no workers isn't in the way for construction
+		bool workerBlockingSite = false;
+		for (auto u : Broodwar->self()->getUnits())
+		{
+			if (u->getType().isWorker())
+				if (u->getTilePosition().x + 2 < t_pos.x && u->getTilePosition().x - 2 > t_pos.x)
+					if (u->getTilePosition().y + 2 < t_pos.y && u->getTilePosition().y - 2 > t_pos.y)
+						workerBlockingSite = true;
+		}
+		if (!workerBlockingSite)
+		{
+			foundLocation = true;
+		}
+	}
+
+	return t_pos;
 }
 
 int WorkerAI::getPreviousState() const

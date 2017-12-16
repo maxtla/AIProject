@@ -24,12 +24,24 @@
     <ClCompile Include="WorkerAI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MarineAI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WorkerManagerAI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\ExampleAIModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WorkerAI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MarineAI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WorkerManagerAI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
