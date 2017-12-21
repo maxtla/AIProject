@@ -1,0 +1,16 @@
+Idag jobbade jag lite med hur man tar reda på vart basen befinner sig så vi vet vart vi behöver attackera. 
+Helt enkelt använde jag fusket som tar bort fog of war och låter oss se allt. Sen när vi har upptäckt basen sparar vi
+positionen på den. Jag skickar ned positionen eftersom Zerg kan utveckla basen, det leder till att Unit pekaren blir oanvändbar,
+positionen förblir dock. 
+
+Personligen tycker jag det är okej att vi använder fusk eftersom vi bara har en mycket mycket linjär och generell AI som inte bryr
+som vilken ras den spelar mot så strategin är ju inte anpassad för t.ex Zerg rush strategi. 
+
+Vidare ska jag jobba med dokumentet idag, sammanfattning av våran AI.
+
+Jag vill att du jobbar vidare på det du har jobbat med innan, din Army AI. Gör den smartare, förösk hitta på en lösning hur vi vet när vi är i strid
+och när vi ska marschera vidare mot basen. I nuläget macherar alla units bara mot basen vilket innebär att Siege tanks inte är i Siege mode. 
+
+Max
+Arbetstid ca. 2h
+13:18 2017-12-21
