@@ -1,6 +1,8 @@
 #include "ExampleAIModule.h" 
 using namespace BWAPI;
 
+int frameUpdateTime;
+bool buildProcess;
 bool eventProcessing;
 bool analyzed;
 bool analysis_just_finished;
@@ -11,8 +13,21 @@ BWTA::Region* enemy_base;
 //when a new game has been started with the bot.
 void ExampleAIModule::onStart()
 {
-	Broodwar->setLocalSpeed(10);
+	frameUpdateTime = 10;
+	buildProcess = false;
+
+	Broodwar->setLocalSpeed(frameUpdateTime);
 	Broodwar->sendText("Hello world!");
+
+	//Only for debugging purpose, it could be beneficial to know which Race you are up against
+	if (Broodwar->enemy()->getRace() == Races::Protoss)
+	{
+		Broodwar->printf("Enemy Race is Protoss");
+	}
+	else
+	{
+		Broodwar->printf("Enemy Race is Zerg");
+	}
 	//Enable flags
 	Broodwar->enableFlag(Flag::UserInput);
 	//Uncomment to enable complete map information
@@ -25,25 +40,9 @@ void ExampleAIModule::onStart()
 	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AnalyzeThread, NULL, 0, NULL); //Threaded version
 	AnalyzeThread();
 
-	//Create a WorkerAI instance for each worker, set correct state and push back to vector
-	for (auto u : Broodwar->self()->getUnits())
-	{
-		if (u->getType().isWorker())
-		{
-			WorkerAI wrkAI = WorkerAI(u);
-			wrkAI.setState(WorkerStates::LookForMinerals);
-			this->workerAIContainer.push_back(wrkAI);
-		}
-	}
-
-	//fill the queue
-	for (int i = GameStrategy::createFirstDepot; i != GameStrategy::Last; i++)
-	{
-		this->GameStates.push(i);
-	}
-
-	marineCounter = 0;
-	eventProcessing = false;
+	this->wManager = new WorkerManagerAI();
+	counter = 0;
+	currentState = GameStrategy::createSupplyDepot;
 }
 
 //Called when a game is ended.
@@ -54,6 +53,7 @@ void ExampleAIModule::onEnd(bool isWinner)
 	{
 		Broodwar->sendText("I won!");
 	}
+	delete this->wManager;
 }
 
 //Finds a guard point around the home base.
@@ -80,122 +80,213 @@ Position ExampleAIModule::findGuardPoint()
 	return choke->getCenter();
 }
 
-void ExampleAIModule::buildDepot(size_t unit)
-{
-	this->workerAIContainer.at(unit).setState(WorkerStates::Building);
-	this->workerAIContainer.at(unit).setEvent(BuildEvents::buildSupplyDepot);
-	eventProcessing = true;
-}
 
-void ExampleAIModule::createWorker()
+bool ExampleAIModule::createWorker()
 {
+	bool creating = false;
 	for (auto u : Broodwar->self()->getUnits())
 	{
 		if (u->canTrain(UnitTypes::Terran_SCV))
 		{
-			u->train(UnitTypes::Terran_SCV);
+			creating = u->train(UnitTypes::Terran_SCV);
+			
 			break;
 		}
 	}
+	return creating;
 }
 
-void ExampleAIModule::createMarine()
+bool ExampleAIModule::createMarine()
 {
+	bool creating = false;
 	for (auto u : Broodwar->self()->getUnits())
 	{
 		if (u->canTrain(UnitTypes::Terran_Marine))
 		{
-			u->train(UnitTypes::Terran_Marine);
+			
+			creating = u->train(UnitTypes::Terran_Marine);
 			break;
 		}
 	}
+	return creating;
 }
 
-void ExampleAIModule::buildRefinery(size_t unit)
+bool ExampleAIModule::createMedic()
 {
-		//just pick a worker we know is not busy building
-		this->workerAIContainer.at(unit).setState(WorkerStates::Building);
-		this->workerAIContainer.at(unit).setEvent(BuildEvents::buildRefinery);
-		eventProcessing = true;
+	bool creating = false;
+	for (auto u : Broodwar->self()->getUnits())
+	{
+		if (u->canTrain(UnitTypes::Terran_Medic))
+		{
+			creating = u->train(UnitTypes::Terran_Medic);
+			break;
+		}
+	}
+	return creating;
 }
 
-void ExampleAIModule::buildBarracks(size_t unit)
+bool ExampleAIModule::createMachineShop()
 {
-	this->workerAIContainer.at(unit).setState(WorkerStates::Building);
-	this->workerAIContainer.at(unit).setEvent(BuildEvents::buildBarracks);
-	eventProcessing = true;
+	bool creating = false;
+	for (auto u : Broodwar->self()->getUnits())
+	{
+		if (u->getType() == UnitTypes::Terran_Factory)
+		{
+			creating = u->buildAddon(UnitTypes::Terran_Machine_Shop);
+			break;
+		}
+	}
+	return creating;
 }
+
+bool ExampleAIModule::createSiegeTank()
+{
+	bool creating = false;
+	for (auto u : Broodwar->self()->getUnits())
+	{
+		if (u->canTrain(UnitTypes::Terran_Siege_Tank_Siege_Mode))
+		{
+			creating = u->train(UnitTypes::Terran_Siege_Tank_Siege_Mode);
+			break;
+		}
+	}
+	return creating;
+}
+
 
 void ExampleAIModule::update()
 {
 	//this the Games strategy bot logic
-	switch (this->GameStates.front())
+	switch (this->currentState)
 	{
-	case GameStrategy::createFirstDepot:
+	case GameStrategy::createSupplyDepot:
 		//check if the current event is being processed
 		//if false, pick an available worker to build a depot
-		if (!eventProcessing && Broodwar->self()->minerals() >= 100)
+		if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot) == 2 && Broodwar->self()->allUnitCount(UnitTypes::Terran_Barracks) == 0)
 		{
-			size_t unit = 0;
-			buildDepot(unit);
+			currentState = GameStrategy::createBarracks;
+		}
+		else if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot) == 4 && Broodwar->self()->allUnitCount(UnitTypes::Terran_Barracks) > 0)
+		{
+			currentState = GameStrategy::createAcademy;
+		}
+		else if (!buildProcess && Broodwar->self()->minerals() >= 100)
+		{
+			Broodwar->printf("I'm calling build depot function");
+			buildProcess = wManager->build(BuildEvents::buildSupplyDepot);	
 		}
 		break;
 	case GameStrategy::createWorker:
 		//simply create a worker and then move onto the next stage, we can start building the refinery while the worker is being completed
-		createWorker();
-		this->GameStates.pop();
+		if (Broodwar->self()->minerals() >= 50 && Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) < 9)
+		{
+			Broodwar->printf("Create worker called");
+			createWorker();
+		}
+		else if (Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) == 9)
+		{
+			currentState = GameStrategy::createMarine;
+		}
 		break;
 	case GameStrategy::createRefinery:
 		//tell a worker to build a refinery
-		if (!eventProcessing && Broodwar->self()->minerals() >= 100)
+		if (!buildProcess && Broodwar->self()->minerals() >= 100)
 		{
 			Broodwar->printf("I'm calling build refinery function");
-			size_t unit = 1;
-			buildRefinery(unit);
+			buildProcess = wManager->build(BuildEvents::buildRefinery);
 		}
-		break;
-	case GameStrategy::createSecondDepot:
-		if (!eventProcessing && Broodwar->self()->minerals() >= 100)
+		if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Refinery) == 1)
 		{
-			Broodwar->printf("I'm calling build depot function");
-			//use a different unit then Unit 0 here since unit 0 needs 3 update iterations to be able to build again
-			//to avoid this behavior we could use booleans as return values when we call a worker for help
-			//but since we know which unit is available at this moment we use a simpler approach even though it's lazy and bad programming behaviour
-			size_t unit = 2;
-			buildDepot(unit);
-		}
-		break;
-	case GameStrategy::createFourWorkers:
-		if (!eventProcessing && Broodwar->self()->minerals() >= 50 && Broodwar->self()->allUnitCount() < 13) //make sure we have enough minerals for 4 workers
-		{
-			eventProcessing = true;
-			createWorker();
-		}
-		else if (Broodwar->self()->allUnitCount() == 13)
-		{
-			this->GameStates.pop();
+			buildProcess = false;
+			currentState = GameStrategy::createWorker;
 		}
 		break;
 	case GameStrategy::createBarracks:
-		if (!eventProcessing && Broodwar->self()->minerals() >= 150)
+		if (!buildProcess && Broodwar->self()->minerals() >= 150)
 		{
 			Broodwar->printf("I'm calling build barracks function");
-			size_t unit = 3;
-			buildBarracks(unit);
+			buildProcess = wManager->build(BuildEvents::buildBarracks);		
+		}
+		if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Barracks) == 1)
+		{
+			currentState = GameStrategy::createRefinery;
 		}
 		break;
-	case GameStrategy::createTenMarines:
-		if (!eventProcessing && Broodwar->self()->minerals() >= 250 && marineCounter < 10)
+	case GameStrategy::createMarine:
+		if (Broodwar->self()->minerals() >= 250 && counter < 10)
 		{
-			eventProcessing = true;
 			for (int i = 0; i < 5; i++)
 			{
 				createMarine();
+				counter++;
+			}
+			if (counter <= 5 && marineAIContainer.size() > 0)
+			{
+				currentState = GameStrategy::createFactory;
+				counter = 0;
+			}
+			else if (counter <= 5)
+			{
+				currentState = GameStrategy::createSupplyDepot;
+				counter = 0;
 			}
 		}
-		else if (marineCounter == 10)
-			this->GameStates.pop();
-
+		break;
+	case GameStrategy::createAcademy:
+		if (!buildProcess && Broodwar->self()->minerals() >= 150 && Broodwar->self()->allUnitCount(UnitTypes::Terran_Academy) < 1)
+		{
+			Broodwar->printf("I'm calling build academy function");
+			buildProcess = wManager->build(BuildEvents::buildAcademy);
+			currentState = GameStrategy::createMarine;
+		}
+		if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Academy) == 1)
+		{
+			currentState = GameStrategy::createFactory;
+		}
+		break;
+	case GameStrategy::createFactory:
+		if (!buildProcess && Broodwar->self()->minerals() >= 150)
+		{
+			Broodwar->printf("I'm calling build academy function");
+			buildProcess = wManager->build(BuildEvents::buildFactory);
+			currentState = createAcademy;
+		}
+		if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Factory) == 1)
+		{
+			currentState = GameStrategy::createMedic;
+		}
+		break;
+	case GameStrategy::createMedic:
+		if (Broodwar->self()->minerals() >= 150 && Broodwar->self()->gas() >= 75)
+		{
+			bool created = false;
+			for (int i = 0; i < 3; i++)
+			{
+				created = createMedic();
+			}
+			if (created)
+				currentState = GameStrategy::createMachineShop;
+		}
+		break;
+	case GameStrategy::createMachineShop:
+		if (Broodwar->self()->minerals() >= 50 && Broodwar->self()->gas() >= 50)
+		{
+			if (createMachineShop())
+				currentState = GameStrategy::createSiegeTank;
+		}
+		break;
+	case GameStrategy::createSiegeTank:
+		if (Broodwar->self()->minerals() >= 150 && Broodwar->self()->gas() >= 100)
+		{
+			if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Machine_Shop) > 0)
+			{
+				createSiegeTank();
+			}
+			if (Broodwar->self()->allUnitCount(UnitTypes::Terran_Siege_Tank_Siege_Mode) == 3)
+			{
+				currentState = GameStrategy::attack;
+			}
+		}
 		break;
 	default:
 		break;
@@ -206,20 +297,23 @@ void ExampleAIModule::update()
 //shall be called.
 void ExampleAIModule::onFrame()
 {
+	frameUpdateTime += frameUpdateTime;
 	//Call every 100:th frame
 	if (Broodwar->getFrameCount() % 100 == 0)
 	{
-		//each 100th frame call update on our workerAI
-		for (size_t i = 0; i < this->workerAIContainer.size(); i++)
+		
+		wManager->update();
+		for (size_t i = 0; i < this->marineAIContainer.size(); i++)
 		{
-			this->workerAIContainer.at(i).update();
+			this->marineAIContainer.at(i).update();
 		}
-		//Broodwar->printf("%d", GameStates.front());
+		Broodwar->printf("State: %d", currentState);
+		/*Broodwar->printf("%d", Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV));
+		Broodwar->printf("%d", wManager->size());*/
 	}
 
 	//update the game state machine every frame? 
 	update();
-
 	//Draw lines around regions, chokepoints etc.
 	if (analyzed)
 	{
@@ -303,10 +397,17 @@ void ExampleAIModule::onUnitHide(BWAPI::Unit unit)
 //has been finished.
 void ExampleAIModule::onUnitCreate(BWAPI::Unit unit)
 {
+	UnitType type = unit->getType();
 	if (unit->getPlayer() == Broodwar->self())
 	{
 		Broodwar->sendText("A %s [%x] has been created at (%d,%d)", unit->getType().getName().c_str(), unit, unit->getPosition().x, unit->getPosition().y);
+		
+		if (type.isBuilding())
+		{
+			buildProcess = false;
+		}
 	}
+	
 }
 
 //Called when a unit has been destroyed.
@@ -465,66 +566,21 @@ void ExampleAIModule::showForces()
 //Called when a unit has been completed, i.e. finished built.
 void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 {
-	Broodwar->sendText("A %s [%x] has been completed at (%d,%d)",unit->getType().getName().c_str(),unit,unit->getPosition().x,unit->getPosition().y);
-	
+	Broodwar->sendText("A %s [%x] has been completed at (%d,%d)", unit->getType().getName().c_str(), unit, unit->getPosition().x, unit->getPosition().y);
+
 	//find the worker who was building and tell him that the building is finished so he can resume gathering
 	//we have to do this because the workes does not directly get the event information
-	if (unit->getType().isBuilding() && eventProcessing)
-	{
-		eventProcessing = false;
-		GameStates.pop();
-		for (size_t i = 0; i < this->workerAIContainer.size(); i++)
-		{
-			if (workerAIContainer.at(i).getCurrentState() == WorkerStates::Building)
-			{
-				if (workerAIContainer.at(i).getPreviousState() != WorkerStates::Building)
-				{
-					workerAIContainer.at(i).setState(workerAIContainer.at(i).getPreviousState());
-				}
-				else
-				{
-					workerAIContainer.at(i).setState(WorkerStates::LookForMinerals);
-				}
-				i = this->workerAIContainer.size();
-			}
-		}
-	}
+	UnitType type = unit->getType();
 	//when a worker is completed, push him back into the vector
 	//when we have more than 5 workers, tell the new workers to gather gas instead
-	if (unit->getType() == UnitTypes::Terran_SCV)
+	if (type == UnitTypes::Terran_SCV)
 	{
-		eventProcessing = false;
-		//push the new worker into our container
-		WorkerAI wrkAi = WorkerAI(unit);
-		wrkAi.setState(WorkerStates::LookForMinerals);
-		this->workerAIContainer.push_back( wrkAi);
-		//check if we have more than 5 workers, if so we tell X amount workers to gather gas
-		if (this->workerAIContainer.size() > 5)
-		{
-			//make sure the player has at least one refinery
-			for (auto u : Broodwar->self()->getUnits())
-			{
-				if (u->getType() == UnitTypes::Terran_Refinery)
-				{
-					size_t delta = this->workerAIContainer.size() - 5;
-					for (size_t i = 0; i < delta; i++)
-					{
-						if (this->workerAIContainer.at(i).getCurrentState() != WorkerStates::Building)
-							this->workerAIContainer.at(i).setState(WorkerStates::LookForGas);
-					}
-					break;
-				}
-			}
-		}	
+		wManager->addWorker(unit);
 	}
 
-	if (unit->getType() == UnitTypes::Terran_Marine)
+	if (type == UnitTypes::Terran_Marine)
 	{
-		marineCounter++;
-		if (marineCounter == 5)
-			eventProcessing = false;
-		if (marineCounter == 10)
-			eventProcessing = false;
-		unit->rightClick(findGuardPoint());
+		MarineAI mrnAi = MarineAI(unit, home, enemy_base);
+		this->marineAIContainer.push_back(mrnAi);
 	}
 }

@@ -93,13 +93,21 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="MarineAI.cpp" />
     <ClCompile Include="Source\Dll.cpp" />
     <ClCompile Include="Source\ExampleAIModule.cpp" />
-    <ClCompile Include="WorkerAI.cpp" />
+    <ClCompile Include="WorkerAI.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="WorkerManagerAI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MarineAI.h" />
     <ClInclude Include="Source\ExampleAIModule.h" />
-    <ClInclude Include="WorkerAI.h" />
+    <ClInclude Include="WorkerAI.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="WorkerManagerAI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

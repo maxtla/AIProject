@@ -4,13 +4,18 @@
 #include <BWTA.h>
 #include <windows.h>
 #include <vector>
-#include "../WorkerAI.h"
+#include "../WorkerManagerAI.h"
+#include "../MarineAI.h"
 #include <queue>
+
+#define UNIT_TIME_OUT_MS 10000 //10 sec
 
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
 
+extern int frameUpdateTime;
+extern bool buildProcess;
 extern bool eventProcessing;
 extern bool analyzed;
 extern bool analysis_just_finished;
@@ -23,23 +28,17 @@ DWORD WINAPI AnalyzeThread();
 //we need to iterate through the enum too fill the min heap, I want to avoid long switch statement
 enum GameStrategy
 {
-	createFirstDepot,
+	createSupplyDepot,
+	createBarracks,
+	createMarine,
 	createWorker,
 	createRefinery,
-	createSecondDepot,
-	createFourWorkers, //these workers exclusively gather gas
-	createBarracks,
-	createTenMarines,
 	createAcademy,
-	createThreeMedics,
+	createMedic,
 	createFactory,
 	createMachineShop,
-	createThreeTanks,
-	createSiegeModeUpgrade,
-	createCommandCenter,
-	createFiveWorkers, //these workers are created from the new command center
-	attackEnemyBase,
-	Last
+	createSiegeTank,
+	attack
 };
 
 
@@ -75,14 +74,15 @@ public:
 
 	//Own private members, AI containers
 private:
-	vector<WorkerAI> workerAIContainer;
-	queue<int> GameStates;
-	int marineCounter;
+	WorkerManagerAI *wManager;
+	vector<MarineAI> marineAIContainer;
+	int currentState;
 	//private methods
-	void buildDepot(size_t unit);
-	void createWorker();
-	void createMarine();
-	void buildRefinery(size_t unit);
-	void buildBarracks(size_t unit);
+	int counter;
+	bool createWorker();
+	bool createMarine();
+	bool createMedic();
+	bool createMachineShop();
+	bool createSiegeTank();
 	void update();
 };
