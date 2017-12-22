@@ -1,0 +1,22 @@
+Dagens jobb börjades med att försöka komma på ett bättre system för både WorkerAI och GameAI.
+Jag kom fram till ett beslut att jag inte längre har WorkerAI per UNIT utan en AI som hanterar units efter hur spelet går. 
+Den sköter t.ex. moment där när en worker som har blivit tilldelat ett jobb och blivit klar med det går tillbaka och börjar hämta resurser igen, istället
+för att den registrera ett nytt jobb efter 3 update iterationer som det avr innan sker det nu efter 1 iteration. 
+Worker manager AI kan dessutom tilldela olika worker byggjobb så att saker kan byggas samtidigt, tidigare var det så att man väntade på att
+en konstruktion skulle blir färdigt och då skulle skicka ut ett nytt bygg event. Kort sagt, Worker manager AI sköter byggevent hantering. 
+
+För Game AI så har jag helt tagit bort systemet med kön och istället satsat på ett växel system där ett state kan ha flera olika transitions
+och på så sätt växla mellan de olika state. Ex. Jag skickar ut att 5 Marines skapas, sedan byter jag till ett nytt state så länge de håller på att
+skapas, senare återkommer jag till createMarine state och skapar 5 marines igen, men nu ger oss transitionen ett annat state än det innan. 
+Och så försöker jag optimera det hela lite, gör andra jobb om möjligt medans ett jobb håller på att fixas. 
+
+Detta har hjälpt mig mycket då jag nu faktiskt kommer till en punkt där Medics skapas och vi har en Factory. 
+Angående Factory så skickar jag ut ett jobb till den så att den skaffar sig rätt Add-On så vi kan skapar Siege Tanks, men
+inga Siege Tanks vill skapas o sen dör man. RIP. 
+
+Berätta för mig vad du tycker? Jag tycker du hade rätt i att inte ha AI på individ nivå, det var visst smartare att ha en AI som manager för units.
+SÅ förlåt för att jag var så envis med min idè. Din är bättre, så vi kör på den tycker jag :) 
+
+Max
+Arbetstid ca.9h
+21:02 2017-12-16

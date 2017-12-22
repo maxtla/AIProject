@@ -1,0 +1,16 @@
+Idag jobbades främst med att hitta buggar och lösa de. Jag upptäckte att jag hade glömt att uppdatera en boolean 
+i WorkerAI så att man kan skicka nya event. Tidigare var det så att efter ett bygg event så kunde workern inte registrera nya event, dvs fastkörning.
+Vidare har jag tweakat lite på funktionen där en tile ska hittas som är byggbart, har gett de ett offset som efter flera tester visade sig 
+fungerar i de flesta fallen. Så som det är nu borde man kanske fundera på att ändra på hur vi har våran Game AI struktur, för just nu är det
+lätthänt att den kör fast då den väntar på att vissa event (unit complete events) har kommit in så att den kan ändra till nästa state. 
+Jag har iaf hunnit så långt att en Barrack byggs och 10 marines skapas som sedan bara skickas till närmaste chokepoint. Jag har inte påbörjat
+på MarineAI. 
+
+Ett problem för oss är också att vi inte är smarta med strategin, den är långsam. Ofta vid test körningar kommer Fiender och dödar en strax efter 
+alla Marines skapades. Väldigt irriterande för om vi inte kan stänga av det så kanske vi inte ens kommer till en punkt i spelet där vi kan testa
+Medics eller Siege Tanks osv. Kanske finns en möjlighet att inte ha så pass aggressiva fiende?
+Vi kanske får omstrukturera våran GameAI ? Det är öppet för diskussion. Fråga eventuellt Mikael? 
+
+Max 
+Jobbat ca. 4h
+20:42 2017-12-14

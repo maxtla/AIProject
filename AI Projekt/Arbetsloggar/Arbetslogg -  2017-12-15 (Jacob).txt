@@ -1,0 +1,25 @@
+Jag började dagen med att titta på build algoritmen, som ibland inte funkar. Enligt en tutorial nämns som är länkad till i koden
+nämns att man även bör testa att inga mobila units står där man har kommit fram till canBuildAtPosition(). Så jag gjorde om denna 
+funktion till en hjälp funktion som nu även testar att inga mobila unit står ivägen för bygget.
+
+Resten av dagen har jag spenderat för att implementera MarineAi, Denna utvecklades gneom att ha samma upplägg som i WorkerAi för att
+man enkelt skall kunna orientera sig i alla olika Ai som vi bygger. Alla marines kan går från bas till chokePoints som tidigare,
+Det har även funktion som nu letar efter närliggande fiender, men inte så säker på hur bra det funkar, det är ju att getDistance funktionen tar fram
+avståndet (i pixlar). Denna används för att kolla avstånd mellan potentiell fiende och Marine-Uniten, men inte hundra på om när avständet är lämpligt.
+Take Cover gör så att Marinen endast försöker öka avstånd mellan fiende och sig själv, men eftersom inga Medics finns så fastnar Marinen i taklingCover
+staten, eftersom ingen healer än.
+
+Jag tror inte du kommer stöta på något som du inte riktigt förstår, allt är ganska enkel kod.
+
+En skillnad är att alla set Statements för Marine sker endast i MarineAI än så länge, eftersom de endast har ett eventbyte, 
+vilket är att attackera mots¨tåndaren bas. Alla andra statements går rätt mycket hand i hand från att attackera till att stå 
+o vakta eller att gå i cover till att hitta tilbaka till chokepoint för att sen vakta igen.
+
+
+Åsikter om fortsättningen:
+Anser att vi bygger lite för många workers kanske, och assignar dem på gas innan vi behöver hämta gas, borde stationera SeigeTanks vid chokepoints snabbt,
+eftersom dessa dödar mycket bättre. kanske ha en AI som ser till att det alltid finns 10 marines, om 4 dör, så görs 4 nya eller så. på så sätt kan vi ge 
+Barracks, Fordon och Medics byggnaderna egna mindre AI som hela tiden upprätthåller rätt antal kanske.
+Det är nog fortfarande ok att ha en linjär AI, bara vi får upp med offesnsiva medel snabbare, och satsar mer på mineralen i början tills gas blir viktigt
+
+Arbetstid ca 8 timmar
